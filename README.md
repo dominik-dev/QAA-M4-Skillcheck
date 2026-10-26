@@ -1,7 +1,19 @@
-Two tier application with an Express Backend and an nginx frontend with custom html and js files added. 
-Ports required are: 80, 5000 and will require the use of DNS resolution.
+Project to dest docker, kubernetes skills
 
-Total project will include:
-- Finishing Dockerfiles and building Docker Images
-- Separate instance with Jenkins installed as a CI CD Server
-- Kubernetes cluster with a deployment of 2x backend pods and 2x frontend pods
+
+### Commands
+
+Setup test node
+`kind create cluster --name skillcheck-project`
+`k get nodes`
+
+Deploy kubernetes pods
+`k apply -f deployment.yaml`
+
+`k get deployments,pods,services`
+
+Pods were "pending" debug with:
+`k get pods -o wide`
+
+The images were not available in local node so to upload them do:
+`kind load docker-image <image name> --name <cluster>`
