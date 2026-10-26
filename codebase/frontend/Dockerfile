@@ -4,5 +4,6 @@
 FROM nginx:alpine
 
 WORKDIR /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/nginx.conf
 COPY index.html index.js ./
 EXPOSE 80
