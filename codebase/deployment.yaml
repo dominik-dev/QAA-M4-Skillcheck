@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: sc-backend
-          image: sc-backend:local
+          image: dddominik/sc-backend:v1
           resources: {}
           ports:
             - containerPort: 5000
@@ -43,11 +43,10 @@ spec:
     spec:
       containers:
         - name: sc-frontend
-          image: sc-frontend:local
+          image: dddominik/sc-frontend:v1
           resources: {}
           ports:
             - containerPort: 80
-
 status: {}
 ---
 apiVersion: v1

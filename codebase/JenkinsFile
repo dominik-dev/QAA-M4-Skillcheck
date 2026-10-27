@@ -1,1 +1,63 @@
-# JenkinsFile for our CI CD Server
+pipeline {
+    agent any
+
+    options {
+        skipDefaultCheckout(true)
+    }
+
+    environment {
+        KUBE_CONTEXT = 'kind-skillcheck-project' // kubectl config get-contexts
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                // Groovy script getting code using set credentials
+                script {
+                    def revision = checkout scm
+                    env.IMAGE_TAG = "${revision.GIT_COMMIT.take(12)}-${env.BUILD_NUMBER}" // Use commit hash as image tag
+                }
+            }
+        }
+        stage('Build images') {
+            steps {
+                dir('codebase') {
+                    sh '''
+                        set -eu
+                        docker build -t "dddominik/sc-backend:$IMAGE_TAG" backend
+                        docker build -t "dddominik/sc-frontend:$IMAGE_TAG" frontend
+                    '''
+                }
+            }
+        }
+        
+        // Safely handle secrets and push images to Dockerhub
+        stage('Push images') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-credentials',
+                    usernameVariable: 'DOCKERHUB_USERNAME',
+                    passwordVariable: 'DOCKERHUB_TOKEN'
+                )]) {
+                    sh '''
+                        set +x
+                        set -eu
+                        DOCKER_CONFIG="$(mktemp -d)"
+                        export DOCKER_CONFIG
+                        trap 'rm -f "$DOCKER_CONFIG/config.json"; rmdir "$DOCKER_CONFIG"' EXIT
+                        printf '%s' "$DOCKERHUB_TOKEN" | docker login --username "$DOCKERHUB_USERNAME" --password-stdin
+                        docker push "dddominik/sc-backend:$IMAGE_TAG"
+                        docker push "dddominik/sc-frontend:$IMAGE_TAG"
+                    ''' // +x = prevent logging secrets
+                }
+            }
+        }
+        stage('Deploy to Kubernetes') {
+            steps {
+                dir('codebase') {
+                    sh 'bash k8s-deploy.sh "$IMAGE_TAG"'
+                }
+            }
+        }
+    }
+}
