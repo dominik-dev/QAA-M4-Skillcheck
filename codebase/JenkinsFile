@@ -54,9 +54,19 @@ pipeline {
         }
         stage('Deploy to Kubernetes') {
             steps {
-                dir('codebase') {
-                    sh 'bash k8s-deploy.sh "$IMAGE_TAG"'
+                // Passing in my kube config so that Jenkins can see kind contexts
+                withCredentials([file(
+                    credentialsId: 'kubeconfig'
+                    variable: 'KUBECONFIG' // Expose as env var for kubectl
+                )]) {
+                    dir('codebase') {
+                    sh '''
+                        kubectl --context "$KUBE_CONTEXT" get deployments
+                        bash k8s-deploy.sh "$IMAGE_TAG"'
+                    '''
+                    }
                 }
+                
             }
         }
     }
